@@ -10,10 +10,15 @@ module Shared exposing
     , update
     )
 
+import Api.Object
+import Api.Object.Todo as Todo
+import Api.Object.TodoPage as TodoPage
+import Api.Query as Query
 import Browser.Navigation as Nav
-import Http
-import Json.Decode as Decode
-import Json.Decode.Pipeline as Decode
+import Graphql.Http
+import Graphql.Operation exposing (RootQuery)
+import Graphql.SelectionSet as SelectionSet exposing (SelectionSet)
+import RemoteData exposing (RemoteData)
 import Route exposing (Route)
 
 
@@ -21,27 +26,44 @@ type alias Identity =
     String
 
 
-type alias HelloWorldPayload =
-    { message : String }
+type alias TodoPageResponse =
+    { data : List (Maybe TodoResponse)
+    }
 
 
-helloWorldPayloadDecoder : Decode.Decoder HelloWorldPayload
-helloWorldPayloadDecoder =
-    Decode.succeed HelloWorldPayload
-        |> Decode.required "message" Decode.string
+type alias TodoResponse =
+    { title : String
+    }
 
 
-type RemoteData a e
-    = NotAsked
-    | Loading
-    | Success a
-    | Error e
+query : SelectionSet TodoPageResponse RootQuery
+query =
+    Query.allTodos (\opt -> opt) todoPage
+
+
+todoPage : SelectionSet TodoPageResponse Api.Object.TodoPage
+todoPage =
+    SelectionSet.succeed TodoPageResponse
+        |> SelectionSet.with (TodoPage.data todos)
+
+
+todos : SelectionSet TodoResponse Api.Object.Todo
+todos =
+    SelectionSet.succeed TodoResponse
+        |> SelectionSet.with Todo.title
+
+
+makeRequest : Cmd Msg
+makeRequest =
+    query
+        |> Graphql.Http.queryRequest "/api"
+        |> Graphql.Http.send (RemoteData.fromResult >> GotResponse)
 
 
 type alias Shared =
     { key : Nav.Key
     , identity : Maybe Identity
-    , helloWorld : RemoteData HelloWorldPayload Http.Error
+    , todos : RemoteData (Graphql.Http.Error TodoPageResponse) TodoPageResponse
     }
 
 
@@ -49,7 +71,7 @@ type Msg
     = SetIdentity Identity (Maybe String)
     | ResetIdentity
     | ReplaceRoute Route
-    | ReceiveHelloWorld (Result Http.Error HelloWorldPayload)
+    | GotResponse (RemoteData (Graphql.Http.Error TodoPageResponse) TodoPageResponse)
 
 
 identity : Shared -> Maybe String
@@ -61,9 +83,9 @@ init : () -> Nav.Key -> ( Shared, Cmd Msg )
 init _ key =
     ( { key = key
       , identity = Nothing
-      , helloWorld = Loading
+      , todos = RemoteData.NotAsked
       }
-    , Http.get { url = "/.netlify/functions/hello-world?name=Bob Day", expect = Http.expectJson ReceiveHelloWorld helloWorldPayloadDecoder }
+    , makeRequest
     )
 
 
@@ -83,13 +105,8 @@ update msg shared =
         ReplaceRoute route ->
             ( shared, Nav.replaceUrl shared.key <| Route.toUrl route )
 
-        ReceiveHelloWorld result ->
-            case result of
-                Ok payload ->
-                    ( { shared | helloWorld = Success payload }, Cmd.none )
-
-                Err err ->
-                    ( { shared | helloWorld = Error err }, Cmd.none )
+        GotResponse response ->
+            ( { shared | todos = response }, Cmd.none )
 
 
 subscriptions : Shared -> Sub Msg
