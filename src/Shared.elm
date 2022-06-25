@@ -2,6 +2,8 @@ module Shared exposing
     ( Identity
     , Msg(..)
     , Shared
+    , TodoPageResponse
+    , TodoResponse
     , identity
     , init
     , replaceRoute
@@ -10,6 +12,7 @@ module Shared exposing
     , update
     )
 
+import Api
 import Api.Object
 import Api.Object.Todo as Todo
 import Api.Object.TodoPage as TodoPage
@@ -55,13 +58,6 @@ todos =
         |> SelectionSet.with (Todo.completed |> SelectionSet.withDefault False)
 
 
-makeRequest : Cmd Msg
-makeRequest =
-    query
-        |> Graphql.Http.queryRequest "/api"
-        |> Graphql.Http.send (RemoteData.fromResult >> GotResponse)
-
-
 type alias Shared =
     { key : Nav.Key
     , identity : Maybe Identity
@@ -87,7 +83,7 @@ init _ key =
       , identity = Nothing
       , todos = RemoteData.NotAsked
       }
-    , makeRequest
+    , Api.request query GotResponse
     )
 
 
