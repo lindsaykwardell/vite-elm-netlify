@@ -33,6 +33,7 @@ type alias TodoPageResponse =
 
 type alias TodoResponse =
     { title : String
+    , completed : Bool
     }
 
 
@@ -51,6 +52,7 @@ todos : SelectionSet TodoResponse Api.Object.Todo
 todos =
     SelectionSet.succeed TodoResponse
         |> SelectionSet.with Todo.title
+        |> SelectionSet.with (Todo.completed |> SelectionSet.withDefault False)
 
 
 makeRequest : Cmd Msg
