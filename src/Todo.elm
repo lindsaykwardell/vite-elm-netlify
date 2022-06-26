@@ -51,3 +51,8 @@ updateTodo t =
 addTodo : SelectionSet Todo RootMutation
 addTodo =
     Mutation.createTodo { data = { title = "", completed = Absent } } todo
+
+
+deleteTodo : Todo -> SelectionSet (Maybe Todo) RootMutation
+deleteTodo t =
+    Mutation.deleteTodo { id = t.id } todo

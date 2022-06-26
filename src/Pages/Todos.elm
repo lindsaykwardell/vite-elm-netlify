@@ -34,6 +34,8 @@ type Msg
     | ReceiveUpdatedTodo (Api.Query (Maybe Todo))
     | AddTodo
     | ReceiveNewTodo (Api.Query Todo)
+    | DeleteTodo Todo
+    | ReceiveDeletedTodo (Api.Query (Maybe Todo))
 
 
 type alias Model =
@@ -93,11 +95,7 @@ update shared msg model =
                 Nothing ->
                     { model | debounce = Dict.insert todoId newDebouncer model.debounce } |> update shared (DebounceTodo todo subMsg)
 
-        ReceiveUpdatedTodo response ->
-            let
-                _ =
-                    Debug.log "got it back" response
-            in
+        ReceiveUpdatedTodo _ ->
             model |> Effect.withNone
 
         AddTodo ->
@@ -115,6 +113,21 @@ update shared msg model =
             }
                 |> Effect.withNone
 
+        DeleteTodo todo ->
+            { model
+                | todos =
+                    case model.todos of
+                        Success todos ->
+                            Success { data = todos.data |> List.filter (.id >> (/=) todo.id) }
+
+                        _ ->
+                            model.todos
+            }
+                |> Effect.withCmd (Api.mutate (Todo.deleteTodo todo) (shared.currentUser |> Maybe.map .token) ReceiveDeletedTodo)
+
+        ReceiveDeletedTodo _ ->
+            model |> Effect.withNone
+
 
 view : Model -> View Msg
 view model =
@@ -131,7 +144,7 @@ view model =
 
                 Success todos ->
                     div []
-                        [ ul [ class "py-3"] (todos.data |> List.map viewTodo)
+                        [ ul [ class "py-3" ] (todos.data |> List.map viewTodo)
                         , button [ class "bg-blue-500 p-1 hover:bg-blue-700 transition duration-75 rounded font-bold font-anek text-lg text-white", onClick AddTodo ] [ text "Add new todo" ]
                         ]
 
@@ -143,7 +156,7 @@ view model =
 
 viewTodo : Todo -> Html Msg
 viewTodo todo =
-    li [ class "flex gap-2" ]
+    li [ class "flex gap-2 py-1" ]
         [ input
             [ type_ "checkbox"
             , class "accent-teal-500"
@@ -152,4 +165,5 @@ viewTodo todo =
             ]
             []
         , input [ type_ "text", class "w-full p-1", value todo.title, onInput (\title -> UpdateTodo { todo | title = title }) ] []
+        , button [ class "w-8 h-8 border border-red-300 hover:border-red-500 hover:bg-red-100 transition duration-75 rounded border-2", onClick (DeleteTodo todo) ] [ text "🗑" ]
         ]
