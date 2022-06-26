@@ -32,6 +32,8 @@ type Msg
     | SaveTodo Todo
     | DebounceTodo Todo (Debouncer.Msg Msg)
     | ReceiveUpdatedTodo (Api.Query (Maybe Todo))
+    | AddTodo
+    | ReceiveNewTodo (Api.Query Todo)
 
 
 type alias Model =
@@ -98,6 +100,21 @@ update shared msg model =
             in
             model |> Effect.withNone
 
+        AddTodo ->
+            model |> Effect.withCmd (Api.mutate Todo.addTodo (shared.currentUser |> Maybe.map .token) ReceiveNewTodo)
+
+        ReceiveNewTodo result ->
+            { model
+                | todos =
+                    case ( model.todos, result ) of
+                        ( Success todos, Success todo ) ->
+                            Success { data = todos.data |> List.reverse |> (::) todo |> List.reverse }
+
+                        _ ->
+                            model.todos
+            }
+                |> Effect.withNone
+
 
 view : Model -> View Msg
 view model =
@@ -113,7 +130,10 @@ view model =
                     text "Loading..."
 
                 Success todos ->
-                    ul [] (todos.data |> List.map viewTodo)
+                    div []
+                        [ ul [ class "py-3"] (todos.data |> List.map viewTodo)
+                        , button [ class "bg-blue-500 p-1 hover:bg-blue-700 transition duration-75 rounded font-bold font-anek text-lg text-white", onClick AddTodo ] [ text "Add new todo" ]
+                        ]
 
                 Failure _ ->
                     text "ruh roh."

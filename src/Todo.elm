@@ -46,3 +46,8 @@ todo =
 updateTodo : Todo -> SelectionSet (Maybe Todo) RootMutation
 updateTodo t =
     Mutation.updateTodo { id = t.id, data = { title = t.title, completed = Present t.completed } } todo
+
+
+addTodo : SelectionSet Todo RootMutation
+addTodo =
+    Mutation.createTodo { data = { title = "", completed = Absent } } todo
