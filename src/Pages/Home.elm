@@ -28,7 +28,7 @@ view shared =
                         text "Welcome Home!"
                 ]
             , div [ style "display" "flex", style "justify-content" "space-between" ]
-                [ div [] [ a [ href "/counter" ] [ text "See counter" ] ]
+                [ div [] [ a [ href "/todos" ] [ text "See todos" ] ]
                 , div [] [ a [ href "/time" ] [ text "See time" ] ]
                 , div [] [ a [ href "/about" ] [ text "About vite-elm-spa" ] ]
                 ]

@@ -1,15 +1,13 @@
-module Route exposing (Route(..), matchAbout, matchCounter, matchHome, matchSignIn, matchTime, toRoute, toUrl)
+module Route exposing (Route(..), matchAbout, matchCounter, matchHome, matchTime, toRoute, toUrl)
 
 import Url exposing (Url)
 import Url.Builder as Builder
 import Url.Parser exposing ((<?>), Parser, map, oneOf, parse, s, top)
-import Url.Parser.Query as Query
 
 
 type Route
     = Home
-    | SignIn (Maybe String)
-    | Counter Int
+    | Todos
     | Time
     | About
     | NotFound Url
@@ -20,8 +18,7 @@ route =
     oneOf
         [ map Home top
         , map About <| s "about"
-        , map SignIn <| s "sign-in" <?> Query.string "redirect"
-        , map Counter <| s "counter" <?> (Query.int "value" |> Query.map (Maybe.withDefault 0))
+        , map Todos <| s "todos"
         , map Time <| s "time"
         ]
 
@@ -42,15 +39,8 @@ toUrl r =
         About ->
             "/about"
 
-        SignIn redirect ->
-            Builder.absolute [ "sign-in" ]
-                (redirect
-                    |> Maybe.map (Builder.string "redirect" >> List.singleton)
-                    |> Maybe.withDefault []
-                )
-
-        Counter value ->
-            "/counter?value=" ++ String.fromInt value
+        Todos ->
+            "/todos"
 
         Time ->
             "/time"
@@ -83,21 +73,11 @@ matchAbout r =
             Nothing
 
 
-matchSignIn : Route -> Maybe (Maybe String)
-matchSignIn r =
-    case r of
-        SignIn redirect ->
-            Just redirect
-
-        _ ->
-            Nothing
-
-
-matchCounter : Route -> Maybe Int
+matchCounter : Route -> Maybe ()
 matchCounter r =
     case r of
-        Counter value ->
-            Just value
+        Todos ->
+            Just ()
 
         _ ->
             Nothing

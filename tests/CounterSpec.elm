@@ -1,7 +1,7 @@
 module CounterSpec exposing (suite)
 
 import Expect
-import Pages.Counter as Counter
+import Pages.Todos as Counter
 import Test exposing (Test)
 import Test.Html.Event as Event
 import Test.Html.Query as Query
@@ -46,7 +46,7 @@ suite =
                 \_ ->
                     Counter.init 0
                         |> Tuple.first
-                        |> Counter.counterElements
+                        |> Counter.view
                         |> .body
                         |> Query.fromHtml
                         |> Query.has [ Html.text "Count is: 0" ]
@@ -54,17 +54,17 @@ suite =
                 \_ ->
                     Counter.init 0
                         |> Tuple.first
-                        |> Counter.counterElements
+                        |> Counter.view
                         |> .body
                         |> Query.fromHtml
                         |> Query.find [ Html.tag "button", Html.containing [ Html.text "Increment" ] ]
                         |> Event.simulate Event.click
                         |> Event.expect Counter.Increment
-             , Test.test "clicking on the 'Decrement' button sends a decrement message" <|
+            , Test.test "clicking on the 'Decrement' button sends a decrement message" <|
                 \_ ->
                     Counter.init 0
                         |> Tuple.first
-                        |> Counter.counterElements
+                        |> Counter.view
                         |> .body
                         |> Query.fromHtml
                         |> Query.find [ Html.tag "button", Html.containing [ Html.text "Decrement" ] ]

@@ -5,9 +5,9 @@ import Html exposing (a, button, div, text)
 import Html.Attributes exposing (href, style)
 import Html.Events exposing (onClick)
 import Pages.About as About
-import Pages.Counter as Counter
 import Pages.Home as Home
 import Pages.Time as Time
+import Pages.Todos as Counter
 import Route
 import Shared exposing (Shared)
 import Spa
@@ -80,6 +80,6 @@ main =
             , update = Shared.update
             , toRoute = Route.toRoute
             , toDocument = toDocument
-            , protectPage = Route.toUrl >> Just >> Route.SignIn >> Route.toUrl
+            , protectPage = \_ -> Route.toUrl Route.Home
             }
         |> Browser.application
