@@ -1,8 +1,10 @@
 module Pages.Todos exposing (Model, Msg(..), init, page, update, view)
 
 import Api
+import Api.Scalar exposing (Id(..))
+import Debouncer.Basic as Debouncer exposing (Debouncer)
+import Dict exposing (Dict)
 import Effect exposing (Effect)
-import Graphql.Http
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
@@ -27,16 +29,25 @@ page shared user =
 type Msg
     = ReceiveAllTodos (Api.Query Todo.TodoPage)
     | UpdateTodo Todo
+    | SaveTodo Todo
+    | DebounceTodo Todo (Debouncer.Msg Msg)
     | ReceiveUpdatedTodo (Api.Query (Maybe Todo))
 
 
 type alias Model =
-    { todos : Api.Query Todo.TodoPage }
+    { todos : Api.Query Todo.TodoPage, debounce : Dict String (Debouncer Msg Msg) }
 
 
 init : Shared.User -> () -> ( Model, Effect Shared.Msg Msg )
 init user _ =
-    { todos = NotAsked } |> Effect.withCmd (Api.query Todo.allTodos (Just user.token) ReceiveAllTodos)
+    { todos = NotAsked, debounce = Dict.empty } |> Effect.withCmd (Api.query Todo.allTodos (Just user.token) ReceiveAllTodos)
+
+
+newDebouncer : Debouncer Msg Msg
+newDebouncer =
+    Debouncer.manual
+        |> Debouncer.settleWhenQuietFor (Just <| Debouncer.fromSeconds 1)
+        |> Debouncer.toDebouncer
 
 
 update : Shared -> Msg -> Model -> ( Model, Effect Shared.Msg Msg )
@@ -50,9 +61,41 @@ update shared msg model =
                 | todos =
                     model.todos |> RemoteData.map (\{ data } -> { data = data |> List.updateIf (.id >> (==) todo.id) (\_ -> todo) })
             }
-                |> Effect.withCmd (Api.mutate (Todo.updateTodo todo) (shared.currentUser |> Maybe.map .token) ReceiveUpdatedTodo)
+                |> update shared (DebounceTodo todo (Debouncer.provideInput <| SaveTodo todo))
+
+        SaveTodo todo ->
+            model |> Effect.withCmd (Api.mutate (Todo.updateTodo todo) (shared.currentUser |> Maybe.map .token) ReceiveUpdatedTodo)
+
+        DebounceTodo todo subMsg ->
+            let
+                todoId =
+                    todo.id |> (\(Id id) -> id)
+            in
+            case Dict.get todoId model.debounce |> Maybe.map (Debouncer.update subMsg) of
+                Just ( subModel, subCmd, emittedMsg ) ->
+                    let
+                        mappedCmd =
+                            Cmd.map (DebounceTodo todo) subCmd
+
+                        updatedModel =
+                            { model | debounce = Dict.insert todoId subModel model.debounce }
+                    in
+                    case emittedMsg of
+                        Just emitted ->
+                            update shared emitted updatedModel
+                                |> Effect.addCmd mappedCmd
+
+                        Nothing ->
+                            updatedModel |> Effect.withCmd mappedCmd
+
+                Nothing ->
+                    { model | debounce = Dict.insert todoId newDebouncer model.debounce } |> update shared (DebounceTodo todo subMsg)
 
         ReceiveUpdatedTodo response ->
+            let
+                _ =
+                    Debug.log "got it back" response
+            in
             model |> Effect.withNone
 
 
