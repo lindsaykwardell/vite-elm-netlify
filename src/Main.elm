@@ -1,9 +1,9 @@
 module Main exposing (main)
 
 import Browser exposing (Document)
-import Html exposing (a, button, div, text)
-import Html.Attributes exposing (href, style)
-import Html.Events exposing (onClick)
+import Html exposing (..)
+import Html.Attributes exposing (..)
+import Html.Events exposing (..)
 import Pages.About as About
 import Pages.Home as Home
 import Pages.Time as Time
@@ -26,16 +26,23 @@ toDocument :
 toDocument shared view =
     { title = view.title
     , body =
-        [ div
-            [ style "font-size" "20px" ]
+        [ div [ class "flex justify-between items-center p-2" ]
             [ div
-                [ style "width" "100%"
-                , style "height" "100%"
+                [ class "flex items-center gap-4" ]
+                [ img [ src "/logo.png", class "w-12" ] []
+                , h1 [] [ text "Elm Netlify Todos" ]
                 ]
-                [ div
-                    [ style "text-align" "right"
-                    , style "padding" "20px"
-                    ]
+            , nav [ class "flex gap-4 text-lg font-bold" ]
+                [ a [ href "/" ] [ text "Home" ]
+                , a [ href "/about" ] [ text "About" ]
+                , case shared.currentUser of
+                    Shared.SignedIn _ ->
+                        a [ href "/todos" ] [ text "Todos" ]
+
+                    Shared.SignedOut ->
+                        text ""
+                , div
+                    []
                   <|
                     case shared.currentUser of
                         Shared.SignedIn currentUser ->
@@ -46,14 +53,11 @@ toDocument shared view =
 
                         Shared.SignedOut ->
                             [ a [ href "#", onClick (Spa.mapSharedMsg Shared.OpenLogin) ] [ text "Sign in" ] ]
-                , div
-                    [ style "display" "flex"
-                    , style "align-items" "center"
-                    , style "justify-content" "center"
-                    ]
-                    [ view.body ]
                 ]
             ]
+        , main_
+            []
+            [ view.body ]
         ]
     }
 

@@ -47,7 +47,7 @@ view model =
     { title = "Counter"
     , body =
         div []
-            [ h1 [ class "text-2xl" ] [ text "Todos" ]
+            [ h1 [] [ text "Todos" ]
             , case model.todos of
                 NotAsked ->
                     text "Not asked to get anything"

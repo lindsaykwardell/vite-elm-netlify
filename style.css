@@ -1,3 +1,47 @@
+@import url("https://fonts.googleapis.com/css2?family=Anek+Latin:wght@200&family=Bitter:wght@200&display=swap");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+body {
+  @apply font-bitter bg-gray-200;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+a {
+  @apply font-anek;
+}
+
+h1 {
+  @apply text-4xl font-bold;
+}
+
+h2 {
+  @apply text-3xl font-bold;
+}
+
+h3 {
+  @apply text-2xl;
+}
+
+h4 {
+  @apply text-xl;
+}
+
+h5 {
+  @apply text-lg;
+}
+
+a {
+  @apply text-teal-600 hover:text-teal-800 underline;
+}
+
+main {
+  @apply w-full md:w-11/12 lg:w-5/6 xl:w-[1200px] m-auto bg-white shadow rounded p-4;
+}
