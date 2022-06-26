@@ -93,7 +93,7 @@ update : Msg -> Shared -> ( Shared, Cmd Msg )
 update msg shared =
     case msg of
         SetCurrentUser currentUser ->
-            ( { shared | currentUser = currentUser }, Cmd.none )
+            ( { shared | currentUser = currentUser }, Nav.replaceUrl shared.key "/" )
 
         ReplaceRoute route ->
             ( shared, Nav.replaceUrl shared.key <| Route.toUrl route )

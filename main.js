@@ -19,14 +19,17 @@ netlifyIdentity.init();
 function getCurrentUser() {
   return {
     name: netlifyIdentity.currentUser()?.user_metadata.full_name,
-  }
+  };
 }
 
 if (netlifyIdentity.currentUser()) {
   app.ports.receiveUser.send(getCurrentUser());
 }
 
-netlifyIdentity.on("login", () => app.ports.receiveUser.send(getCurrentUser()))
+netlifyIdentity.on("login", () => {
+  app.ports.receiveUser.send(getCurrentUser());
+  netlifyIdentity.close()
+});
 
 app.ports.openLogin.subscribe(() => {
   netlifyIdentity.open("login");
