@@ -7,7 +7,6 @@ import Html.Events exposing (onClick)
 import Pages.About as About
 import Pages.Counter as Counter
 import Pages.Home as Home
-import Pages.SignIn as SignIn
 import Pages.Time as Time
 import Route
 import Shared exposing (Shared)
@@ -38,15 +37,15 @@ toDocument shared view =
                     , style "padding" "20px"
                     ]
                   <|
-                    case shared.identity of
-                        Just username ->
-                            [ text username
+                    case shared.currentUser of
+                        Shared.SignedIn currentUser ->
+                            [ text currentUser.name
                             , text " | "
-                            , button [ onClick (Spa.mapSharedMsg Shared.ResetIdentity) ] [ text "logout" ]
+                            , a [ href "#", onClick (Spa.mapSharedMsg Shared.Logout) ] [ text "Log out" ]
                             ]
 
-                        Nothing ->
-                            [ a [ href "/sign-in" ] [ text "Sign-in" ] ]
+                        Shared.SignedOut ->
+                            [ a [ href "#", onClick (Spa.mapSharedMsg Shared.OpenLogin) ] [ text "Sign in" ] ]
                 , div
                     [ style "display" "flex"
                     , style "align-items" "center"
@@ -62,11 +61,17 @@ toDocument shared view =
 main =
     Spa.init
         { defaultView = View.defaultView
-        , extractIdentity = Shared.identity
+        , extractIdentity =
+            \shared ->
+                case shared.currentUser of
+                    Shared.SignedOut ->
+                        Nothing
+
+                    Shared.SignedIn currentUser ->
+                        Just currentUser
         }
         |> Spa.addPublicPage mappers Route.matchHome Home.page
         |> Spa.addPublicPage mappers Route.matchAbout About.page
-        |> Spa.addPublicPage mappers Route.matchSignIn SignIn.page
         |> Spa.addProtectedPage mappers Route.matchCounter Counter.page
         |> Spa.addPublicPage mappers Route.matchTime Time.page
         |> Spa.application View.map

@@ -10,7 +10,7 @@ import Spa.Page
 import View exposing (View)
 
 
-page : Shared -> Shared.Identity -> Spa.Page.Page Int Shared.Msg (View Msg) Model Msg
+page : Shared -> Shared.User -> Spa.Page.Page Int Shared.Msg (View Msg) Model Msg
 page _ _ =
     Spa.Page.element
         { init = init

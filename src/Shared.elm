@@ -1,13 +1,12 @@
-module Shared exposing
-    ( Identity
+port module Shared exposing
+    ( CurrentUser(..)
     , Msg(..)
     , Shared
     , TodoPageResponse
     , TodoResponse
-    , identity
+    , User
     , init
     , replaceRoute
-    , setIdentity
     , subscriptions
     , update
     )
@@ -25,8 +24,14 @@ import RemoteData exposing (RemoteData)
 import Route exposing (Route)
 
 
-type alias Identity =
-    String
+type CurrentUser
+    = SignedOut
+    | SignedIn User
+
+
+type alias User =
+    { name : String
+    }
 
 
 type alias TodoPageResponse =
@@ -60,27 +65,24 @@ todos =
 
 type alias Shared =
     { key : Nav.Key
-    , identity : Maybe Identity
+    , currentUser : CurrentUser
     , todos : RemoteData (Graphql.Http.Error TodoPageResponse) TodoPageResponse
     }
 
 
 type Msg
-    = SetIdentity Identity (Maybe String)
-    | ResetIdentity
+    = SetCurrentUser CurrentUser
     | ReplaceRoute Route
+    | OpenLogin
+    | Logout
     | GotResponse (RemoteData (Graphql.Http.Error TodoPageResponse) TodoPageResponse)
-
-
-identity : Shared -> Maybe String
-identity =
-    .identity
 
 
 init : () -> Nav.Key -> ( Shared, Cmd Msg )
 init _ key =
     ( { key = key
-      , identity = Nothing
+      , currentUser =
+            SignedOut
       , todos = RemoteData.NotAsked
       }
     , Api.request query GotResponse
@@ -90,33 +92,38 @@ init _ key =
 update : Msg -> Shared -> ( Shared, Cmd Msg )
 update msg shared =
     case msg of
-        SetIdentity newIdentity redirect ->
-            ( { shared | identity = Just newIdentity }
-            , redirect
-                |> Maybe.map (Nav.replaceUrl shared.key)
-                |> Maybe.withDefault Cmd.none
-            )
-
-        ResetIdentity ->
-            ( { shared | identity = Nothing }, Cmd.none )
+        SetCurrentUser currentUser ->
+            ( { shared | currentUser = currentUser }, Cmd.none )
 
         ReplaceRoute route ->
             ( shared, Nav.replaceUrl shared.key <| Route.toUrl route )
+
+        OpenLogin ->
+            ( shared, openLogin () )
+
+        Logout ->
+            ( { shared | currentUser = SignedOut }, Cmd.batch [ logout (), Nav.replaceUrl shared.key "/" ] )
 
         GotResponse response ->
             ( { shared | todos = response }, Cmd.none )
 
 
 subscriptions : Shared -> Sub Msg
-subscriptions =
-    always Sub.none
-
-
-setIdentity : String -> Maybe String -> Msg
-setIdentity =
-    SetIdentity
+subscriptions shared =
+    Sub.batch
+        [ receiveUser (\user -> SetCurrentUser (SignedIn user))
+        ]
 
 
 replaceRoute : Route -> Msg
 replaceRoute =
     ReplaceRoute
+
+
+port openLogin : () -> Cmd msg
+
+
+port logout : () -> Cmd msg
+
+
+port receiveUser : (User -> msg) -> Sub msg
