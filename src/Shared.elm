@@ -1,6 +1,5 @@
 port module Shared exposing
-    ( CurrentUser(..)
-    , Msg(..)
+    ( Msg(..)
     , Shared
     , User
     , init
@@ -14,11 +13,6 @@ import RemoteData exposing (RemoteData)
 import Route exposing (Route)
 
 
-type CurrentUser
-    = SignedOut
-    | SignedIn User
-
-
 type alias User =
     { name : String
     , token : String
@@ -27,12 +21,12 @@ type alias User =
 
 type alias Shared =
     { key : Nav.Key
-    , currentUser : CurrentUser
+    , currentUser : Maybe User
     }
 
 
 type Msg
-    = SetCurrentUser CurrentUser
+    = SetCurrentUser (Maybe User)
     | ReplaceRoute Route
     | OpenLogin
     | Logout
@@ -42,7 +36,7 @@ init : () -> Nav.Key -> ( Shared, Cmd Msg )
 init _ key =
     ( { key = key
       , currentUser =
-            SignedOut
+            Nothing
       }
     , Cmd.none
     )
@@ -61,13 +55,13 @@ update msg shared =
             ( shared, openLogin () )
 
         Logout ->
-            ( { shared | currentUser = SignedOut }, Cmd.batch [ logout (), Nav.replaceUrl shared.key "/" ] )
+            ( { shared | currentUser = Nothing }, Cmd.batch [ logout (), Nav.replaceUrl shared.key "/" ] )
 
 
 subscriptions : Shared -> Sub Msg
 subscriptions _ =
     Sub.batch
-        [ receiveUser (\user -> SetCurrentUser (SignedIn user))
+        [ receiveUser (\user -> SetCurrentUser (Just user))
         ]
 
 

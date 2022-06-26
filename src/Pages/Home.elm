@@ -2,7 +2,7 @@ module Pages.Home exposing (page)
 
 import Html exposing (a, code, div, h1, img, p, text)
 import Html.Attributes exposing (href, src, style)
-import Shared exposing (Shared, CurrentUser(..))
+import Shared exposing (Shared)
 import Spa.Page
 import View exposing (View)
 
@@ -21,10 +21,10 @@ view shared =
             , h1 [] [ text "Hello, Vite + Elm + SPA!" ]
             , p []
                 [ case shared.currentUser of
-                    SignedIn currentUser ->
+                    Just currentUser ->
                         text <| "Welcome Home " ++ currentUser.name ++ "!"
 
-                    SignedOut ->
+                    Nothing ->
                         text "Welcome Home!"
                 ]
             , div [ style "display" "flex", style "justify-content" "space-between" ]

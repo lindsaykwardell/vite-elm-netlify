@@ -36,22 +36,22 @@ toDocument shared view =
                 [ a [ href "/" ] [ text "Home" ]
                 , a [ href "/about" ] [ text "About" ]
                 , case shared.currentUser of
-                    Shared.SignedIn _ ->
+                    Just _ ->
                         a [ href "/todos" ] [ text "Todos" ]
 
-                    Shared.SignedOut ->
+                    Nothing ->
                         text ""
                 , div
                     []
                   <|
                     case shared.currentUser of
-                        Shared.SignedIn currentUser ->
+                        Just currentUser ->
                             [ text currentUser.name
                             , text " | "
                             , a [ href "#", onClick (Spa.mapSharedMsg Shared.Logout) ] [ text "Log out" ]
                             ]
 
-                        Shared.SignedOut ->
+                        Nothing ->
                             [ a [ href "#", onClick (Spa.mapSharedMsg Shared.OpenLogin) ] [ text "Sign in" ] ]
                 ]
             ]
@@ -66,13 +66,7 @@ main =
     Spa.init
         { defaultView = View.defaultView
         , extractIdentity =
-            \shared ->
-                case shared.currentUser of
-                    Shared.SignedOut ->
-                        Nothing
-
-                    Shared.SignedIn currentUser ->
-                        Just currentUser
+            .currentUser
         }
         |> Spa.addPublicPage mappers Route.matchHome Home.page
         |> Spa.addPublicPage mappers Route.matchAbout About.page

@@ -1,21 +1,26 @@
-module Api exposing (request)
+module Api exposing (Query, mutate, query)
 
 import Graphql.Http
-import Graphql.Operation exposing (RootQuery)
+import Graphql.Operation exposing (RootMutation, RootQuery)
 import Graphql.SelectionSet exposing (SelectionSet)
 import RemoteData exposing (RemoteData)
 
 
-request : SelectionSet a RootQuery -> Maybe String -> (RemoteData (Graphql.Http.Error a) a -> msg) -> Cmd msg
-request query token msg =
-    query
-        |> Graphql.Http.queryRequest "/api"
-        |> (\r ->
-                case token of
-                    Just t ->
-                        Graphql.Http.withHeader "Authorization" ("Bearer " ++ t) r
+type alias Query a =
+    RemoteData (Graphql.Http.Error a) a
 
-                    Nothing ->
-                        r
-           )
+
+query : SelectionSet a RootQuery -> Maybe String -> (Query a -> msg) -> Cmd msg
+query q token msg =
+    q
+        |> Graphql.Http.queryRequest "/api"
+        |> Graphql.Http.withHeader "Authorization" ("Bearer " ++ (token |> Maybe.withDefault ""))
+        |> Graphql.Http.send (RemoteData.fromResult >> msg)
+
+
+mutate : SelectionSet a RootMutation -> Maybe String -> (Query a -> msg) -> Cmd msg
+mutate q token msg =
+    q
+        |> Graphql.Http.mutationRequest "/api"
+        |> Graphql.Http.withHeader "Authorization" ("Bearer " ++ (token |> Maybe.withDefault ""))
         |> Graphql.Http.send (RemoteData.fromResult >> msg)
