@@ -123,9 +123,13 @@ view model =
 
 viewTodo : Todo -> Html Msg
 viewTodo todo =
-    li [ class "flex" ]
-        [ label [ class "flex gap-2" ]
-            [ input [ type_ "checkbox", class "accent-teal-500", checked todo.completed, onCheck (\completed -> UpdateTodo { todo | completed = completed }) ] []
-            , text todo.title
+    li [ class "flex gap-2" ]
+        [ input
+            [ type_ "checkbox"
+            , class "accent-teal-500"
+            , checked todo.completed
+            , onCheck (\completed -> UpdateTodo { todo | completed = completed })
             ]
+            []
+        , input [ type_ "text", class "w-full p-1", value todo.title, onInput (\title -> UpdateTodo { todo | title = title }) ] []
         ]
