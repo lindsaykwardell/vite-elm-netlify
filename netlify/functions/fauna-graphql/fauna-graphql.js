@@ -12,7 +12,7 @@ const fetch = require("node-fetch");
 const handler = async function (event, context) {
   const { user } = context.clientContext;
 
-  if (!user && process.env.NODE_ENV === "production") {
+  if (!user && !process.env.NETLIFY_DEV) {
     return {
       statusCode: 401,
     };
@@ -49,6 +49,8 @@ const handler = async function (event, context) {
   });
   const server = new ApolloServer({
     schema: executableSchema,
+    playground: process.env.NETLIFY_DEV,
+    introspection: process.env.NETLIFY_DEV
   });
   return new Promise((resolve, reject) => {
     const cb = (err, args) => (err ? reject(err) : resolve(args));
